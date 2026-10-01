@@ -1,44 +1,68 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Flame, Moon, Sun } from "lucide-react";
+import { BookOpen, Calculator, FlaskConical, Leaf, LineChart, PenLine, University } from "lucide-react";
 import { useApp } from "../context/AppContext.jsx";
-const cards = [
-  ["/setup", "Practice exam mode", "Timed paper with official subject mix"],
-  ["/setup", "Practice topics", "Drill one syllabus topic"],
-  ["/literature", "Literature and novels", "Summaries and chapter notes"],
-  ["/study", "Video lessons and notes", "Notes, videos and flashcards"],
-  ["/games", "Games arcade", "MathsCraft, Word Search, Challenge Bot"],
-  ["/institutions", "Career and school finder", "Courses and cut-off marks"],
-  ["/analytics", "Performance centre", "Score history"],
-  ["/parent", "Parent portal", "PIN-protected report"],
+import Shell from "../components/Shell.jsx";
+
+const pathways = [
+  { to: "/setup", label: "Math", icon: Calculator, bg: "bg-[#7BA37A]", color: "text-white" },
+  { to: "/setup", label: "English", icon: PenLine, bg: "bg-[#E8B89A]", color: "text-ink" },
+  { to: "/setup", label: "Chemistry", icon: FlaskConical, bg: "bg-[#D4B36A]", color: "text-ink" },
+  { to: "/setup", label: "Biology", icon: Leaf, bg: "bg-[#F0E4C8]", color: "text-ink" },
 ];
+
 export default function Dashboard() {
-  const { user, exam, exams, setExam, dark, toggleTheme, streak, offlineNote } = useApp();
+  const { user, exam, exams, setExam, streak, offlineNote } = useApp();
+  const progress = Math.round(user?.average_score || 72);
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white">
-      <header className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-b border-slate-200 dark:border-slate-800">
-        <div>
-          <p className="text-sm text-slate-500">Hello</p>
-          <p className="font-semibold">{user?.full_name || "Student (demo)"}</p>
+    <Shell title="TD EDU CORE">
+      <section className="wood-banner text-white rounded-[1.6rem] p-5 shadow-soft mb-5">
+        <p className="text-xs uppercase tracking-widest opacity-80">Progress {progress}%</p>
+        <div className="flex items-end justify-between mt-2">
+          <p className="font-display text-5xl leading-none">{progress}%</p>
+          <div className="text-right text-sm">
+            <p>Welcome back, {user?.full_name || "Jutlwone"}</p>
+            <p className="opacity-80">Terracotta path</p>
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <select value={exam} onChange={(e) => setExam(e.target.value)} className="bg-transparent border rounded-lg px-2 py-1 text-sm">
-            {exams.map((item) => <option key={item}>{item}</option>)}
-          </select>
-          <span className="text-xs px-2 py-1 rounded-full bg-emerald-100 text-emerald-800">{offlineNote}</span>
-          <span className="flex items-center gap-1 text-orange-500 text-sm"><Flame size={16} /> {streak}</span>
-          <button onClick={toggleTheme} className="p-2 rounded-lg border">{dark ? <Sun size={16} /> : <Moon size={16} />}</button>
-          <Link to="/activate" className="text-sm text-blue-600">{user?.activation_status === "active" ? "Licensed" : "Activate"}</Link>
+        <div className="mt-4 h-2 rounded-full bg-white/30">
+          <div className="h-2 rounded-full bg-white" style={{ width: progress + "%" }} />
         </div>
-      </header>
-      <section className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4 p-4">
-        {cards.map(([to, title, text]) => (
-          <Link key={title} to={to} className="rounded-2xl bg-white dark:bg-slate-900 p-5 shadow-sm">
-            <h2 className="font-semibold">{title}</h2>
-            <p className="text-sm text-slate-500 mt-1">{text}</p>
-          </Link>
-        ))}
       </section>
-    </div>
+      <div className="flex gap-2 overflow-auto mb-5">
+        {exams.map((item) => (
+          <button key={item} onClick={() => setExam(item)} className={`chip whitespace-nowrap ${exam === item ? "bg-sage-700 text-white" : "bg-parchment text-sage-700"}`}>
+            {item === "JAMB" ? "UTME" : item}
+          </button>
+        ))}
+      </div>
+      <section className="card-soft p-4 mb-5">
+        <div className="flex justify-between items-center mb-3">
+          <h2 className="font-semibold text-sage-700">My pathways</h2>
+          <Link to="/setup" className="text-xs text-sage-500">See all</Link>
+        </div>
+        <div className="grid grid-cols-4 gap-3 text-center">
+          {pathways.map((p) => {
+            const Icon = p.icon;
+            return (
+              <Link key={p.label} to={p.to} className="space-y-2">
+                <div className={`mx-auto h-14 w-14 rounded-full grid place-items-center ${p.bg} ${p.color}`}><Icon size={20} /></div>
+                <p className="text-xs">{p.label}</p>
+              </Link>
+            );
+          })}
+        </div>
+      </section>
+      <section className="card-soft p-4 mb-5">
+        <h2 className="font-semibold text-sage-700 mb-2">Today’s exploration</h2>
+        <p className="text-sm">Recent actions · {offlineNote}</p>
+      </section>
+      <div className="grid grid-cols-2 gap-3">
+        <Link to="/study" className="card-soft p-4"><BookOpen className="text-sage-700 mb-2" /><p className="font-semibold">Study materials</p></Link>
+        <Link to="/analytics" className="card-soft p-4"><LineChart className="text-terra-700 mb-2" /><p className="font-semibold">Performance</p></Link>
+        <Link to="/institutions" className="card-soft p-4"><University className="text-wood mb-2" /><p className="font-semibold">School finder</p></Link>
+        <Link to="/parent" className="card-soft p-4"><p className="font-semibold">Parent portal</p></Link>
+      </div>
+    </Shell>
   );
 }
