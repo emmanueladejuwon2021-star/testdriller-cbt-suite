@@ -1,0 +1,9 @@
+node_modules
+dist
+.env
+client/.env
+data
+*.log
+auto_fix_error.log
+.DS_Store
+client/dist
