@@ -1,5 +1,18 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@import url("https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Cormorant+Garamond:wght@600;700&display=swap");
 html, body, #root { min-height: 100%; }
+body { font-family: Nunito, "Segoe UI", sans-serif; background: #EFE8D8; color: #3D4A38; }
+.font-display { font-family: "Cormorant Garamond", Georgia, serif; }
+.organic-bg {
+  background:
+    radial-gradient(circle at 12% 18%, #E7C9A4 0 28%, transparent 29%),
+    radial-gradient(circle at 88% 10%, #C9D9B8 0 22%, transparent 23%),
+    radial-gradient(circle at 80% 88%, #E2B48A 0 18%, transparent 19%),
+    linear-gradient(180deg, #F7F1E4 0%, #E7E1CF 100%);
+}
+.wood-banner { background: linear-gradient(135deg, #E2B07A 0%, #C98A55 55%, #B97848 100%); }
 .palette-tile { min-width: 2.25rem; min-height: 2.25rem; }
+.card-soft { background: #FFF9F0; border-radius: 1.4rem; box-shadow: 0 10px 28px rgba(79, 107, 64, 0.08); }
+.chip { border-radius: 999px; padding: 0.35rem 0.8rem; font-size: 0.75rem; font-weight: 700; }
