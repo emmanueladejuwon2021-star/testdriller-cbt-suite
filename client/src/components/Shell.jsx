@@ -14,7 +14,7 @@ export default function Shell({ title, back, children, hideNav = false }) {
   const loc = useLocation();
   return (
     <div className="min-h-screen organic-bg text-ink">
-      <div className="max-w-md mx-auto min-h-screen px-4 pb-24 pt-4">
+      <div className="max-w-3xl mx-auto min-h-screen px-4 pb-28 pt-4">
         <header className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             {back && (
@@ -30,7 +30,7 @@ export default function Shell({ title, back, children, hideNav = false }) {
       </div>
       {!hideNav && (
         <nav className="fixed bottom-0 left-0 right-0">
-          <div className="max-w-md mx-auto m-3 rounded-pill bg-parchment shadow-soft flex justify-around py-2">
+          <div className="max-w-3xl mx-auto m-3 mb-4 rounded-pill bg-parchment shadow-soft flex justify-around py-2">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const on = loc.pathname === tab.to;

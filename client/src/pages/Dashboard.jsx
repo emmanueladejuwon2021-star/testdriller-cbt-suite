@@ -5,15 +5,15 @@ import { useApp } from "../context/AppContext.jsx";
 import Shell from "../components/Shell.jsx";
 
 const pathways = [
-  { to: "/setup", label: "Math", icon: Calculator, bg: "bg-[#7BA37A]", color: "text-white" },
-  { to: "/setup", label: "English", icon: PenLine, bg: "bg-[#E8B89A]", color: "text-ink" },
-  { to: "/setup", label: "Chemistry", icon: FlaskConical, bg: "bg-[#D4B36A]", color: "text-ink" },
-  { to: "/setup", label: "Biology", icon: Leaf, bg: "bg-[#F0E4C8]", color: "text-ink" },
+  { to: "/setup?subject=Mathematics", label: "Math", icon: Calculator, bg: "bg-[#7BA37A]", color: "text-white" },
+  { to: "/setup?subject=English", label: "English", icon: PenLine, bg: "bg-[#E8B89A]", color: "text-ink" },
+  { to: "/setup?subject=Chemistry", label: "Chemistry", icon: FlaskConical, bg: "bg-[#D4B36A]", color: "text-ink" },
+  { to: "/setup?subject=Biology", label: "Biology", icon: Leaf, bg: "bg-[#F0E4C8]", color: "text-ink" },
 ];
 
 export default function Dashboard() {
   const { user, exam, exams, setExam, streak, offlineNote } = useApp();
-  const progress = Math.round(user?.average_score || 72);
+  const progress = Number.isFinite(Number(user?.average_score)) ? Math.round(Number(user.average_score)) : 0;
   return (
     <Shell title="TD EDU CORE">
       <section className="wood-banner text-white rounded-[1.6rem] p-5 shadow-soft mb-5">
@@ -21,7 +21,7 @@ export default function Dashboard() {
         <div className="flex items-end justify-between mt-2">
           <p className="font-display text-5xl leading-none">{progress}%</p>
           <div className="text-right text-sm">
-            <p>Welcome back, {user?.full_name || "Jutlwone"}</p>
+            <p>Welcome back, {user?.full_name || "Student"}</p>
             <p className="opacity-80">Terracotta path</p>
           </div>
         </div>

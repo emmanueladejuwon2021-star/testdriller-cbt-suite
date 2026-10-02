@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { offlineDb } from "../db/dexie.js";
 import { useApp } from "../context/AppContext.jsx";
 import Shell from "../components/Shell.jsx";
 export default function ExamSetup() {
   const nav = useNavigate();
+  const [params] = useSearchParams();
   const { exam, exams, setExam } = useApp();
   const [subjects, setSubjects] = useState([]);
   const [picked, setPicked] = useState([]);
@@ -12,7 +13,15 @@ export default function ExamSetup() {
   const [minutes, setMinutes] = useState(40);
   const [mode, setMode] = useState("Practice");
   const [calculator, setCalculator] = useState(true);
-  useEffect(() => { offlineDb.subjects.toArray().then(setSubjects); }, []);
+  useEffect(() => {
+    offlineDb.subjects.toArray().then((rows) => {
+      setSubjects(rows);
+      const wanted = (params.get("subject") || "").toLowerCase();
+      if (!wanted) return;
+      const match = rows.find((s) => s.name.toLowerCase().includes(wanted) || s.code?.toLowerCase() === wanted);
+      if (match) setPicked([match.id]);
+    });
+  }, [params]);
   const maxSubjects = exam === "WAEC" ? 9 : 4;
   function toggle(id) {
     setPicked((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : prev.length >= maxSubjects ? prev : [...prev, id]);
@@ -47,6 +56,16 @@ export default function ExamSetup() {
             <span>{s.name}</span>
           </label>
         ))}
+      </div>
+      <div className="grid grid-cols-2 gap-3 mb-4">
+        <label className="card-soft p-3 text-sm">
+          Questions
+          <input className="mt-1 w-full rounded-lg border px-2 py-1" type="number" min={5} max={180} value={count} onChange={(e) => setCount(Number(e.target.value) || 5)} />
+        </label>
+        <label className="card-soft p-3 text-sm">
+          Minutes
+          <input className="mt-1 w-full rounded-lg border px-2 py-1" type="number" min={5} max={180} value={minutes} onChange={(e) => setMinutes(Number(e.target.value) || 5)} />
+        </label>
       </div>
       <button disabled={!picked.length} onClick={start} className="w-full rounded-pill bg-sage-700 text-white py-3 font-semibold disabled:opacity-40">Start practice</button>
     </Shell>

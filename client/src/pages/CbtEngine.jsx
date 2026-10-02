@@ -14,9 +14,11 @@ export default function CbtEngine() {
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [setup, setSetup] = useState(null);
   const [passage, setPassage] = useState(null);
+  const [clockReady, setClockReady] = useState(false);
   const [showCalc, setShowCalc] = useState(false);
   const [fontPx, setFontPx] = useState(18);
   const startedAt = useRef(Date.now());
+  const submitted = useRef(false);
   useEffect(() => {
     async function load() {
       const saved = await offlineDb.exam_sessions.get("active");
@@ -27,28 +29,32 @@ export default function CbtEngine() {
       let rows = await offlineDb.questions.toArray();
       if (cfg.subjects?.length) rows = rows.filter((q) => cfg.subjects.includes(q.subject_id));
       rows = rows.slice(0, cfg.count || 40);
+      if (cfg.shuffleQ) rows = rows.sort(() => Math.random() - 0.5);
       if (saved?.questions?.length) {
         setQuestions(saved.questions);
         setAnswers(saved.answers || {});
         setFlags(saved.flags || {});
         setIndex(saved.index || 0);
         setSecondsLeft(saved.secondsLeft || cfg.minutes * 60);
+        setClockReady(true);
       } else {
         setQuestions(rows);
         setSecondsLeft((cfg.minutes || 40) * 60);
+        setClockReady(true);
       }
     }
     load();
   }, [nav]);
   useEffect(() => {
+    if (!questions.length) return undefined;
     const t = setInterval(() => {
-      setSecondsLeft((s) => {
-        if (s <= 1) { clearInterval(t); finish(true); return 0; }
-        return s ? s - 1 : 0;
-      });
+      setSecondsLeft((s) => (s > 0 ? s - 1 : 0));
     }, 1000);
     return () => clearInterval(t);
   }, [questions.length]);
+  useEffect(() => {
+    if (clockReady && questions.length && secondsLeft === 0 && setup) finish(true);
+  }, [secondsLeft, questions.length, setup]);
   useEffect(() => {
     if (!questions.length) return;
     offlineDb.exam_sessions.put({ id: "active", status: "Interrupted", updated_at: new Date().toISOString(), setup, questions, answers, flags, index, secondsLeft });
@@ -59,6 +65,8 @@ export default function CbtEngine() {
     offlineDb.passages.get(current.passage_id).then((row) => setPassage(row || null));
   }, [current]);
   async function finish() {
+    if (submitted.current) return;
+    submitted.current = true;
     const logs = questions.map((q) => ({ question_id: q.id, user_selected_option: answers[q.id] || "", correct_option: q.correct_option, is_correct: answers[q.id] === q.correct_option, was_bookmarked: Boolean(flags[q.id]), question: q }));
     const score = logs.filter((x) => x.is_correct).length;
     const result = { score, total: logs.length, percentage: logs.length ? (score / logs.length) * 100 : 0, logs, setup, time_spent_seconds: Math.round((Date.now() - startedAt.current) / 1000) };
@@ -105,8 +113,8 @@ export default function CbtEngine() {
         {questions.map((q, i) => {
           let color = "bg-slate-300";
           if (answers[q.id]) color = "bg-emerald-500 text-white";
-          if (flags[q.id]) color = "bg-yellow-400";
-          if (i === index) color = "bg-blue-600 text-white";
+          if (flags[q.id]) color = "bg-yellow-400 text-slate-900";
+          if (i === index) color = "bg-blue-600 text-white ring-2 ring-offset-1 ring-blue-800";
           return <button key={q.id} onClick={() => setIndex(i)} className={`palette-tile rounded text-xs ${color}`}>{i + 1}</button>;
         })}
       </footer>
