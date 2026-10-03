@@ -1,13 +1,19 @@
-# Emerald Drill — Test Driller UTME clone
+# Emerald Drill UTME
 
-MERN-style stack with React, Redux Toolkit, Express, and Turso-compatible libSQL.
+Integrated variant of the Test Driller UTME workflow inside testdriller-cbt-suite.
+Distinct emerald / slate-blue theme. Not an official TestDriller product.
+
+- React + Tailwind + Redux Toolkit
+- Express API
+- Turso-compatible libSQL (`@libsql/client`). Set `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` for hosted Turso; otherwise a local SQLite file is used at `server/data/testdriller.db`.
 
 ## Run
+
 ```bash
-cd server && npm install && npm run seed && npm start
-cd ../client && npm install && npm run dev
+cd variants/emerald-utme/server && npm install && npm run seed && npm start
+cd variants/emerald-utme/client && npm install && npm run dev
 ```
 
-Demo activation keys: `UTME-EMERALD-2026`, `UTME-SLATE-DEMO`.
+Demo activation key: `TD-EMERALD-2026`
 
-Set `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` to use hosted Turso. Otherwise the API uses a local libSQL file at `server/data/testdriller.db`.
+The suite app on port 5050 remains the multi-exam CBT shell. This variant is the dedicated UTME simulation (English + 3 subjects, exam / practice / correction, question grid, device binding).

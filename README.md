@@ -26,3 +26,7 @@ UI: http://localhost:5173
 
 Demo product key after seed: TDRL-DEMO-2026-TEST
 Parent PIN: 2468
+
+## Emerald UTME variant
+
+The dedicated UTME click-flow (activation key, device bind, four-subject paper, question grid, correction log) lives in `variants/emerald-utme`. Run that package on port 4000 / 5174 if the suite client is already using 5173. Demo key: `TD-EMERALD-2026`.
