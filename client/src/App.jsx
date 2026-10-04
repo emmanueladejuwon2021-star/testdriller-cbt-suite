@@ -14,6 +14,8 @@ import Institutions from "./pages/Institutions.jsx";
 import ParentPortal from "./pages/ParentPortal.jsx";
 import Analytics from "./pages/Analytics.jsx";
 import StudyHub from "./pages/StudyHub.jsx";
+import Dictionary from "./pages/Dictionary.jsx";
+import Flashcards from "./pages/Flashcards.jsx";
 
 export default function App() {
   const app = useApp();
@@ -32,6 +34,8 @@ export default function App() {
       <Route path="/parent" element={<ParentPortal />} />
       <Route path="/analytics" element={<Analytics />} />
       <Route path="/study" element={<StudyHub />} />
+      <Route path="/dictionary" element={<Dictionary />} />
+      <Route path="/flashcards" element={<Flashcards />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

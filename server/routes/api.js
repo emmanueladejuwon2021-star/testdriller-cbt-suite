@@ -110,4 +110,25 @@ router.get("/parent/summary", requireAuth, async (req, res) => {
   if (String(req.query.pin) !== String(user.parent_pin || process.env.PARENT_DEFAULT_PIN || "2468")) return res.status(403).json({ ok: false, error: "Wrong parent PIN." });
   res.json({ ok: true, student: { full_name: user.full_name, total_tests_taken: user.total_tests_taken, average_score: user.average_score, target_exam: user.target_exam }, attempts: await all("SELECT * FROM test_attempts WHERE user_id = ? ORDER BY date_taken DESC LIMIT 20", [req.user.id]) });
 });
+
+router.get("/dictionary", async (req, res) => {
+  const q = String(req.query.q || "").trim();
+  if (!q) {
+    const rows = await all("SELECT * FROM dictionary_entries ORDER BY word LIMIT 40");
+    return res.json({ ok: true, entries: rows });
+  }
+  const rows = await all(
+    "SELECT * FROM dictionary_entries WHERE word LIKE ? OR definition LIKE ? ORDER BY word LIMIT 40",
+    ["%" + q + "%", "%" + q + "%"]
+  );
+  res.json({ ok: true, entries: rows });
+});
+router.get("/games/scores", requireAuth, async (req, res) => {
+  res.json({ ok: true, scores: await all("SELECT * FROM game_scores WHERE user_id = ? ORDER BY rowid DESC LIMIT 20", [req.user.id]) });
+});
+router.get("/study/notes", async (_req, res) => {
+  const topics = await all("SELECT topics.*, subjects.name AS subject_name, subjects.code AS subject_code FROM topics JOIN subjects ON subjects.id = topics.subject_id ORDER BY subjects.name, topics.name");
+  res.json({ ok: true, notes: topics });
+});
+
 module.exports = router;

@@ -198,3 +198,13 @@ CREATE TABLE IF NOT EXISTS sync_logs (
   records_synced_count INTEGER DEFAULT 0,
   sync_status TEXT DEFAULT 'ok'
 );
+
+CREATE TABLE IF NOT EXISTS dictionary_entries (
+  id TEXT PRIMARY KEY,
+  word TEXT NOT NULL,
+  part_of_speech TEXT,
+  definition TEXT NOT NULL,
+  example_sentence TEXT,
+  exam_hint TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_dictionary_word ON dictionary_entries(word);

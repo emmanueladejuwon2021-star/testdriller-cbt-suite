@@ -6,7 +6,9 @@ export async function api(path, options = {}) {
   const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
   const token = getToken();
   if (token) headers.Authorization = "Bearer " + token;
-  const res = await fetch(BASE + path, { ...options, headers });
+  const next = { ...options, headers };
+  if (next.body && typeof next.body !== "string") next.body = JSON.stringify(next.body);
+  const res = await fetch(BASE + path, next);
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || "Request failed");
   return data;
