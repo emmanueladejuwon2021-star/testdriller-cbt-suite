@@ -65,6 +65,7 @@ export default function Dashboard() {
         <Link to="/dictionary" className="card-soft p-4"><p className="font-semibold">Dictionary</p></Link>
         <Link to="/flashcards" className="card-soft p-4"><p className="font-semibold">Flashcards</p></Link>
         <Link to="/games" className="card-soft p-4"><p className="font-semibold">Games</p></Link>
+        <Link to="/challenge" className="card-soft p-4"><p className="font-semibold">UTME Challenge</p></Link>
         <Link to="/literature" className="card-soft p-4"><p className="font-semibold">Literature</p></Link>
       </div>
     </Shell>

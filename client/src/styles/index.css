@@ -1,7 +1,7 @@
+@import url("https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Cormorant+Garamond:wght@600;700&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-@import url("https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Cormorant+Garamond:wght@600;700&display=swap");
 html, body, #root { min-height: 100%; }
 body { font-family: Nunito, "Segoe UI", sans-serif; background: #EFE8D8; color: #3D4A38; }
 .font-display { font-family: "Cormorant Garamond", Georgia, serif; }
