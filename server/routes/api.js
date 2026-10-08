@@ -24,9 +24,15 @@ router.post("/users/register", async (req, res) => {
   } catch (err) { res.status(400).json({ ok: false, error: err.message }); }
 });
 router.post("/users/login", async (req, res) => {
-  const user = await one("SELECT * FROM users WHERE email = ?", [req.body && req.body.email]);
-  if (!user) return res.status(404).json({ ok: false, error: "No account found for that email." });
-  res.json({ ok: true, user, token: tokenFor(user) });
+  try {
+    const email = String((req.body && req.body.email) || "").trim().toLowerCase();
+    if (!email) return res.status(400).json({ ok: false, error: "Email is required." });
+    const user = await one("SELECT * FROM users WHERE lower(email) = ?", [email]);
+    if (!user) return res.status(404).json({ ok: false, error: "No account found for that email." });
+    res.json({ ok: true, user, token: tokenFor(user) });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
 });
 router.get("/users/me", requireAuth, async (req, res) => {
   res.json({ ok: true, user: await one("SELECT * FROM users WHERE id = ?", [req.user.id]) });
@@ -37,20 +43,31 @@ router.patch("/users/me", requireAuth, async (req, res) => {
   res.json({ ok: true, user: await one("SELECT * FROM users WHERE id = ?", [req.user.id]) });
 });
 router.post("/activation/redeem", optionalAuth, async (req, res) => {
-  const key_code = formatKey(req.body && req.body.key_code);
-  const row = await one("SELECT * FROM activation_keys WHERE key_code = ?", [key_code]);
-  if (!row) return res.status(404).json({ ok: false, error: "This product key was not found." });
-  if (row.is_used) return res.status(409).json({ ok: false, error: "This product key is already in use." });
-  let userId = req.user && req.user.id;
-  if (!userId) {
-    userId = id();
-    await run("INSERT INTO users (id, full_name, activation_status, product_key) VALUES (?, 'Licensed Student', 'active', ?)", [userId, key_code]);
+  try {
+    const key_code = formatKey(req.body && req.body.key_code);
+    if (!key_code) return res.status(400).json({ ok: false, error: "A product key is required." });
+    const row = await one("SELECT * FROM activation_keys WHERE key_code = ?", [key_code]);
+    if (!row) return res.status(404).json({ ok: false, error: "This product key was not found." });
+    if (Number(row.is_used) === 1 && row.assigned_user_id && (!req.user || row.assigned_user_id !== req.user.id)) {
+      return res.status(409).json({ ok: false, error: "This product key is already in use." });
+    }
+    let userId = req.user && req.user.id;
+    if (!userId) {
+      userId = id();
+      await run("INSERT INTO users (id, full_name, activation_status, product_key) VALUES (?, 'Licensed Student', 'demo', ?)", [userId, key_code]);
+    }
+    const expiry = new Date(); expiry.setFullYear(expiry.getFullYear() + 1);
+    const claimed = await run(
+      "UPDATE activation_keys SET is_used = 1, assigned_user_id = ?, activated_at = datetime('now'), device_fingerprint = ? WHERE id = ? AND (is_used = 0 OR assigned_user_id = ?)",
+      [userId, (req.body && req.body.device_fingerprint) || "unknown", row.id, userId]
+    );
+    if (!claimed.rowsAffected) return res.status(409).json({ ok: false, error: "This product key is already in use." });
+    await run("UPDATE users SET product_key = ?, activation_status = 'active', expiry_date = ? WHERE id = ?", [key_code, expiry.toISOString(), userId]);
+    const user = await one("SELECT * FROM users WHERE id = ?", [userId]);
+    res.json({ ok: true, user, token: tokenFor(user) });
+  } catch (err) {
+    res.status(400).json({ ok: false, error: err.message });
   }
-  const expiry = new Date(); expiry.setFullYear(expiry.getFullYear() + 1);
-  await run("UPDATE activation_keys SET is_used = 1, assigned_user_id = ?, activated_at = datetime('now'), device_fingerprint = ? WHERE id = ?", [userId, (req.body && req.body.device_fingerprint) || "unknown", row.id]);
-  await run("UPDATE users SET product_key = ?, activation_status = 'active', expiry_date = ? WHERE id = ?", [key_code, expiry.toISOString(), userId]);
-  const user = await one("SELECT * FROM users WHERE id = ?", [userId]);
-  res.json({ ok: true, user, token: tokenFor(user) });
 });
 router.get("/subjects", async (_req, res) => res.json({ ok: true, subjects: await all("SELECT * FROM subjects ORDER BY name") }));
 router.get("/topics", async (req, res) => {
@@ -70,13 +87,39 @@ router.get("/questions", optionalAuth, async (req, res) => {
 });
 router.get("/passages/:id", async (req, res) => res.json({ ok: true, passage: await one("SELECT * FROM passages WHERE id = ?", [req.params.id]) }));
 router.post("/attempts", requireAuth, async (req, res) => {
-  const body = req.body || {}; const answers = Array.isArray(body.answers) ? body.answers : [];
-  const score = answers.filter((a) => a.is_correct).length; const total = answers.length; const attemptId = id();
-  await run("INSERT INTO test_attempts (id, user_id, exam_mode, exam_type, subjects_json, overall_score, total_possible, percentage, duration_allowed_seconds, time_spent_seconds, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [attemptId, req.user.id, body.exam_mode || "Practice", body.exam_type || "JAMB", JSON.stringify(body.subjects || []), score, total, total ? (score / total) * 100 : 0, body.duration_allowed_seconds || 0, body.time_spent_seconds || 0, body.status || "Completed"]);
-  for (const ans of answers) {
-    await run("INSERT INTO test_answers_log (id, attempt_id, question_id, user_selected_option, correct_option, is_correct, time_spent_seconds, was_bookmarked) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", [id(), attemptId, ans.question_id, ans.user_selected_option || null, ans.correct_option || null, ans.is_correct ? 1 : 0, ans.time_spent_seconds || 0, ans.was_bookmarked ? 1 : 0]);
+  try {
+    const body = req.body || {};
+    const answers = Array.isArray(body.answers) ? body.answers : [];
+    const graded = [];
+    for (const ans of answers) {
+      if (!ans || !ans.question_id) continue;
+      const question = await one("SELECT id, correct_option FROM questions WHERE id = ?", [ans.question_id]);
+      if (!question) continue;
+      const selected = String(ans.user_selected_option || "").trim().toUpperCase();
+      const correct = String(question.correct_option || "").trim().toUpperCase();
+      graded.push({
+        question_id: question.id,
+        user_selected_option: selected || null,
+        correct_option: correct,
+        is_correct: selected && selected === correct ? 1 : 0,
+        time_spent_seconds: Number(ans.time_spent_seconds) || 0,
+        was_bookmarked: ans.was_bookmarked ? 1 : 0,
+      });
+    }
+    const score = graded.reduce((sum, row) => sum + row.is_correct, 0);
+    const total = graded.length;
+    const percentage = total ? (score / total) * 100 : 0;
+    const attemptId = id();
+    await run("INSERT INTO test_attempts (id, user_id, exam_mode, exam_type, subjects_json, overall_score, total_possible, percentage, duration_allowed_seconds, time_spent_seconds, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [attemptId, req.user.id, body.exam_mode || "Practice", body.exam_type || "JAMB", JSON.stringify(body.subjects || []), score, total, percentage, body.duration_allowed_seconds || 0, body.time_spent_seconds || 0, body.status || "Completed"]);
+    for (const ans of graded) {
+      await run("INSERT INTO test_answers_log (id, attempt_id, question_id, user_selected_option, correct_option, is_correct, time_spent_seconds, was_bookmarked) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", [id(), attemptId, ans.question_id, ans.user_selected_option, ans.correct_option, ans.is_correct, ans.time_spent_seconds, ans.was_bookmarked]);
+    }
+    const stats = await one("SELECT COUNT(*) AS taken, AVG(percentage) AS average_score FROM test_attempts WHERE user_id = ? AND status = 'Completed'", [req.user.id]);
+    await run("UPDATE users SET total_tests_taken = ?, average_score = ? WHERE id = ?", [Number(stats && stats.taken) || 0, Number(stats && stats.average_score) || 0, req.user.id]);
+    res.json({ ok: true, attempt_id: attemptId, overall_score: score, total_possible: total, percentage });
+  } catch (err) {
+    res.status(400).json({ ok: false, error: err.message });
   }
-  res.json({ ok: true, attempt_id: attemptId, overall_score: score, total_possible: total, percentage: total ? (score / total) * 100 : 0 });
 });
 router.get("/attempts", requireAuth, async (req, res) => res.json({ ok: true, attempts: await all("SELECT * FROM test_attempts WHERE user_id = ? ORDER BY date_taken DESC LIMIT 50", [req.user.id]) }));
 router.get("/attempts/:id", requireAuth, async (req, res) => {

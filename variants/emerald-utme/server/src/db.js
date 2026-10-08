@@ -26,6 +26,7 @@ export async function migrate() {
       password_hash TEXT NOT NULL,
       activation_key TEXT,
       activated INTEGER NOT NULL DEFAULT 0,
+      plan TEXT NOT NULL DEFAULT 'trial',
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
@@ -43,6 +44,7 @@ export async function migrate() {
       plan TEXT NOT NULL,
       max_devices INTEGER NOT NULL DEFAULT 2,
       used_by INTEGER REFERENCES users(id),
+      used_at TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
@@ -116,6 +118,13 @@ export async function migrate() {
       UNIQUE(session_id, question_id)
     );
   `);
+
+  for (const sql of [
+    "ALTER TABLE users ADD COLUMN plan TEXT NOT NULL DEFAULT 'trial'",
+    "ALTER TABLE activation_keys ADD COLUMN used_at TEXT",
+  ]) {
+    try { await db.execute(sql); } catch { /* column already present */ }
+  }
 
   const keys = [
     ["TD-EMERALD-2026", "annual", 2],

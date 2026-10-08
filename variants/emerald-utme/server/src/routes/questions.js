@@ -38,7 +38,7 @@ router.get("/bank", requireAuth, async (req, res) => {
       difficulty: q.difficulty,
       explanation: q.explanation,
       yearTag: q.year_tag,
-      options: options.map((o) => ({ label: o.label, body: o.body, correct: !!o.is_correct })),
+      options: options.map((o) => ({ label: o.label, body: o.body })),
     });
   }
   res.json({ questions: payload });

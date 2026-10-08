@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 
-const SECRET = process.env.JWT_SECRET || "testdriller-emerald-dev-secret";
+const SECRET = process.env.JWT_SECRET || "td-utme-dev-secret-change-me";
 
 export function signToken(user) {
   return jwt.sign(

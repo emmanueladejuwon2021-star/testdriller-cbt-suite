@@ -46,6 +46,7 @@ export default function CbtEngine() {
         setFlags(saved.flags || {});
         setIndex(saved.index || 0);
         setSecondsLeft(saved.secondsLeft || cfg.minutes * 60);
+        if (saved.startedAt) startedAt.current = saved.startedAt;
       } else {
         setQuestions(rows);
         setSecondsLeft((cfg.minutes || 40) * 60);
@@ -64,7 +65,7 @@ export default function CbtEngine() {
   }, [secondsLeft, questions.length, setup, clockReady]);
   useEffect(() => {
     if (!questions.length || !setup) return;
-    offlineDb.exam_sessions.put({ id: "active", status: "Interrupted", updated_at: new Date().toISOString(), setup, questions, answers, flags, index, secondsLeft });
+    offlineDb.exam_sessions.put({ id: "active", status: "Interrupted", updated_at: new Date().toISOString(), setup, questions, answers, flags, index, secondsLeft, startedAt: startedAt.current });
   }, [questions, answers, flags, index, secondsLeft, setup]);
   const current = questions[index];
   useEffect(() => {

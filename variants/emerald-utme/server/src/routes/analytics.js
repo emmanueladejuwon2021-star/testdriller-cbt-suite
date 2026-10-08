@@ -4,6 +4,10 @@ import { requireAuth } from "../middleware/auth.js";
 
 const router = Router();
 
+function safeJson(value) {
+  try { return JSON.parse(value || "[]"); } catch { return []; }
+}
+
 router.get("/overview", requireAuth, async (req, res) => {
   const sessions = rows(await db.execute({
     sql: "SELECT id, mode, score, total, submitted_at, subjects_json FROM exam_sessions WHERE user_id = ? AND status = 'submitted' ORDER BY submitted_at DESC LIMIT 20",
@@ -16,7 +20,7 @@ router.get("/overview", requireAuth, async (req, res) => {
     total: s.total,
     percent: s.total ? Math.round((s.score / s.total) * 100) : 0,
     submittedAt: s.submitted_at,
-    subjects: JSON.parse(s.subjects_json),
+    subjects: safeJson(s.subjects_json),
   }));
   const avg = history.length ? Math.round(history.reduce((a, h) => a + h.percent, 0) / history.length) : 0;
   const topicRows = rows(await db.execute({
