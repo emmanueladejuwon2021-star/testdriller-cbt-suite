@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS users (
   total_tests_taken INTEGER DEFAULT 0,
   average_score REAL DEFAULT 0,
   parent_pin TEXT DEFAULT '2468',
+  password_hash TEXT,
   created_at TEXT DEFAULT (datetime('now'))
 );
 
